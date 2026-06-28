@@ -77,7 +77,7 @@ class LabelsToImage:
 
         return ComposeTransforms(transforms)
 
-    def __call__(self, **data: dict):
+    def __call__(self, **data):
         return self.transforms.__call__(**data)
 
 
@@ -88,9 +88,10 @@ if __name__ == "__main__":
     import torch
 
     label = nib.load('/Users/vicentcaselles/work/research/project_MARCOS/Multiple-Sclerosis-TIMILS/subj5/flair_bfc_filled_NeuroMorph_Parcellation_cleaned.nii.gz')
+    input_resolution = label.header.get_zooms()
     data = torch.from_numpy(np.asarray(label.dataobj))[None]
     lab2im = LabelsToImage(GenerationParams())
-    data = lab2im(**{'seg': data})
+    data = lab2im(**{'seg': data, 'input_resolution': input_resolution})
     image = data.get('im')
     seg = data.get('seg')
     image = image.squeeze(0).numpy()

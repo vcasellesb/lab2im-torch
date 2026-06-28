@@ -11,6 +11,14 @@ from . import (
 )
 
 
+def round_to_nearest_odd(n):
+    rounded = round(n)
+    # If the rounded number is odd, return it
+    if rounded % 2 == 1:
+        return rounded
+    # If the rounded number is even, adjust to the nearest odd number
+    return rounded + 1 if n - rounded >= 0 else rounded - 1
+
 def compute_kernel_size(sigma, truncate):
     return round_to_nearest_odd(sigma * truncate + 0.5)
 
@@ -21,14 +29,6 @@ def build_gaussian_kernel(sigma: float, truncate: float = 4.) -> torch.Tensor:
     pdf = torch.exp(-0.5 * (x / sigma).pow(2))
     kernel1d = pdf / pdf.sum()
     return kernel1d
-
-def round_to_nearest_odd(n):
-    rounded = round(n)
-    # If the rounded number is odd, return it
-    if rounded % 2 == 1:
-        return rounded
-    # If the rounded number is even, adjust to the nearest odd number
-    return rounded + 1 if n - rounded >= 0 else rounded - 1
 
 
 def blur_dimension(img: torch.Tensor, sigma: float, dim_to_blur: int,
@@ -153,6 +153,11 @@ class LowResolutionTransform(base.BaseTransform):
         return random_resolution
 
     @staticmethod
+    def get_default_input_resolution(ndims: int) -> torch.Tensor:
+        warnings.warn('Input resolution not provided. Assuming native 1mm isotropic resolution.')
+        return torch.ones(ndims, dtype=torch.float32)
+
+    @staticmethod
     def get_gaussian_blurring_sigma(input_resolution: torch.Tensor, acquisition_resolution: torch.Tensor, thickness: torch.Tensor):
         coeff = LowResolutionTransform.gaussian_blur_sigma_coeff
         tissue_to_average = torch.minimum(acquisition_resolution, thickness)
@@ -163,7 +168,11 @@ class LowResolutionTransform(base.BaseTransform):
     def get_parameters(self, data):
         image = data.get(self.image_key)
         spatial_dims = image.ndim-1
-        input_resolution = torch.as_tensor(data.get('input_resolution', torch.ones(spatial_dims)))
+        input_resolution = data.get('input_resolution')
+        if input_resolution is None:
+            input_resolution = self.get_default_input_resolution(spatial_dims)
+        else:
+            input_resolution = torch.as_tensor(input_resolution)
 
         nchannels = image.shape[0]
         sigmas, acquisition_resolutions = [], []
@@ -180,10 +189,15 @@ class LowResolutionTransform(base.BaseTransform):
         _, *spatial_shape = image.shape
         spatial_dims = len(spatial_shape)
 
-        input_resolution = data.get('input_resolution', torch.ones(spatial_dims))
-        input_resolution = torch.as_tensor(input_resolution)
+        input_resolution = data.get('input_resolution')
+        if input_resolution is None:
+            input_resolution = self.get_default_input_resolution(spatial_dims)
+        else:
+            input_resolution = torch.as_tensor(input_resolution)
+
         spatial_shape_as_tensor = torch.as_tensor(spatial_shape)
 
+        interpolation_mode = self.interpolate_mode[spatial_dims]
         out = torch.zeros_like(image)
         for c, (gaussian_sigmas_per_dim, acquisition_resolution) in enumerate(zip(
             params.get('sigmas'), params.get('acquisition_resolutions')
@@ -200,7 +214,7 @@ class LowResolutionTransform(base.BaseTransform):
                 channel_data[None], size=down_shape, mode='nearest'
             )
             out[c] = F.interpolate(
-                channel_data, size=spatial_shape, mode=self.interpolate_mode[spatial_dims], align_corners=False
+                channel_data, size=spatial_shape, mode=interpolation_mode, align_corners=False
             )[0, 0]
 
         data[self.image_key] = out
