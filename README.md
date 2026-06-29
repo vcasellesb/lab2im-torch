@@ -13,6 +13,9 @@ As `batchgeneratorsv2`, this code is designed to be run on the CPU during loadin
 To run the pipeline on a segmentation, you should pass it to its `__call__` method as a keyword argument, as follows:
 
 ```python
+from lab2im.labels_to_image import LabelsToImage
+from lab2im._gen_params import GenerationParams
+
 label = nib.load(...)
 # Important: pass segmentations as 4D pytorch tensors
 data = torch.from_numpy(np.asarray(label.dataobj))[None]

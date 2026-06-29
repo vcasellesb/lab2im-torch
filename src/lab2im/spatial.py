@@ -13,7 +13,6 @@ def create_affine_matrix_2d():
 
 def create_rotation_matrix_3d(rotation_angles: torch.Tensor) -> torch.Tensor:
     rotx, roty, rotz = rotation_angles
-    # use np.cos/sin since torch requires angles to be tensors
     Rx = torch.tensor([[1, 0, 0],
                        [0, torch.cos(rotx), -torch.sin(rotx)],
                        [0, torch.sin(rotx), torch.cos(rotx)]])

@@ -1,4 +1,5 @@
 import typing as ty
+import warnings
 import torch
 
 from .base import BaseTransform
@@ -57,7 +58,10 @@ class FlipTransform(BaseTransform):
         seg = data[self.segmentation_key]
 
         # by default assume that the segmentation is in RAS. This is not good, I know.
-        ax_codes = data.get('axis_codes', tuple('RAS'))
+        ax_codes = data.get('axis_codes')
+        if ax_codes is None:
+            warnings.warn('axis_codes not provided. Assuming input data is in RAS orientation.')
+            ax_codes = tuple('RAS')
 
         candidate_axes = [ax_codes.index(self.axis_map[v]) for v in self.flip_axes]
 
