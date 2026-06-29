@@ -10,11 +10,25 @@ However, this repository is motivated by the following points:
 
 As `batchgeneratorsv2`, this code is designed to be run on the CPU during loading batches for training a neural net for medical image segmentation. Essentially, the main "entrypoints" are `labels_to_image.py` and `_gen_params.py`. The former creates the pipeline using the parameters defined in the latter.
 
+# Installation
+
+To install this package use:
+
+```bash
+git clone https://github.com/vcasellesb/lab2im-torch.git
+cd lab2im-torch
+pip install (-e) .
+```
+
+Please note that to load segmentations another package will be required, such as `nibabel` or `SimpleITK` (as evidenced in the following section), which are not included in this package's requirements.
+
+
+# Usage
+
 To run the pipeline on a segmentation, you should pass it to its `__call__` method as a keyword argument, as follows:
 
 ```python
-from lab2im.labels_to_image import LabelsToImage
-from lab2im._gen_params import GenerationParams
+from lab2im import LabelsToImage, GenerationParams
 
 label = nib.load(...)
 # Important: pass segmentations as 4D pytorch tensors
