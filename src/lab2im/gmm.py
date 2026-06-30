@@ -22,7 +22,7 @@ class SampleGMM(BaseTransform):
 
     def get_parameters(self, data):
         seg = data.get(self.segmentation_key)
-        class_vals = torch.unique(seg.ravel(), sorted=True)
+        class_vals = torch.unique(seg.ravel(), sorted=True).long()
         max_label = int(class_vals[-1])
         means_lut = torch.zeros(size=(self.num_channels, max_label+1), device=seg.device, dtype=torch.float32)
         stds_lut = means_lut.clone()

@@ -77,6 +77,7 @@ class LabelsToImage:
 
         return ComposeTransforms(transforms)
 
+
     def __call__(self, **data):
         return self.transforms.__call__(**data)
 

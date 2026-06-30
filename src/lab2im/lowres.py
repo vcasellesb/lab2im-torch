@@ -47,7 +47,7 @@ def blur_dimension(img: torch.Tensor, sigma: float, dim_to_blur: int,
     assert img.ndim - 1 > dim_to_blur, "dim_to_blur must be a valid spatial dimension of the input image."
     # Adjustments for kernel based on image dimensions
     spatial_dims = spatial_dims or (img.ndim - 1)
-    kernel = build_gaussian_kernel(sigma, truncate=truncate)
+    kernel = build_gaussian_kernel(sigma, truncate=truncate).to(img.device)
 
     ksize = kernel.numel()
 
@@ -135,7 +135,9 @@ class LowResolutionTransform(base.BaseTransform):
             return sample.sample_uniform(1, lbds, ubds).repeat(ndim)
 
         if mode == "aniso":
-            aniso_dim = self.aniso_dim if self.aniso_dim is not None else random.randint(a=0, b=ndim-1)
+            aniso_dim = self.aniso_dim if self.aniso_dim is not None else \
+                random.randint(a=0, b=ndim-1)
+
             aniso_resolution = input_resolution.clone()
             lbds = aniso_resolution[aniso_dim].item()
             ubds = max(lbds, self.aniso_ubds)
@@ -162,7 +164,7 @@ class LowResolutionTransform(base.BaseTransform):
         coeff = LowResolutionTransform.gaussian_blur_sigma_coeff
         tissue_to_average = torch.minimum(acquisition_resolution, thickness)
         sigma = coeff * tissue_to_average / input_resolution
-        sigma[tissue_to_average == input_resolution] = 0.5
+        sigma[torch.isclose(tissue_to_average, input_resolution)] = 0.5
         return sigma
 
     def get_parameters(self, data):
