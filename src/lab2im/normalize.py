@@ -8,12 +8,13 @@ from .base import BaseTransform
 class NormalizationTransform(BaseTransform):
 
     def __init__(self,
-                 method: ty.Literal["zscore", "nonorm"] | None
+                 method: ty.Literal["zscore", "nonorm", "minmax"] | None
                  ):
 
         self.epsilon = torch.tensor([1e-8])
         mapping = {
             'zscore': self._zscore_norm,
+            'minmax': self._minmax_norm,
             'nonorm': self._no_norm,
             None: self._no_norm
         }
@@ -28,6 +29,12 @@ class NormalizationTransform(BaseTransform):
         std = data.std(dim=axis, keepdim=True)
         denom = torch.maximum(std, self.epsilon.to(data.device))
         return (data - mean) / denom
+
+    def _minmax_norm(self, data: torch.Tensor, axis: tuple[int]):
+        _min = data.amin(dim=axis, keepdim=True)
+        _max = data.amax(dim=axis, keepdim=True)
+        denom = torch.maximum(_max - _min, self.epsilon.to(data.device))
+        return (data - _min) / denom
 
     def get_parameters(self, data):
         return {}

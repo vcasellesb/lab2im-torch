@@ -5,7 +5,8 @@ from . import (
     bias_field as bf,
     noise,
     lowres,
-    normalize
+    normalize,
+    gamma
 )
 
 from ._gen_params import GenerationParams
@@ -66,9 +67,18 @@ class LabelsToImage:
             p=generation_parameters.p_noise
         ))
 
+        # very important, normalize to [0, 1] before Gaussian Blurring
+        # in LowRes, otherwise we can create massive artifacts.
+        # This simulates an intensity clipping+normalization step prior to resampling.
         transforms.append(normalize.NormalizationTransform(
-            method=generation_parameters.normalization_method
+            method='minmax'
         ))
+
+        # now, since image is strictly in positive values, we can apply gamma
+        if generation_parameters.gamma_std:
+            transforms.append(gamma.GammaTransform(
+                generation_parameters.gamma_std
+            ))
 
         transforms.append(lowres.LowResolutionTransform(
             isotropic_upper_bounds=generation_parameters.isotropic_upper_bounds,
@@ -79,6 +89,13 @@ class LabelsToImage:
             prob_anisotropic=generation_parameters.prob_anisotropic,
             prob_fully_random=generation_parameters.prob_fully_random
         ))
+
+        # optional normalization prior to feeding the image to the neural net
+        if (
+            (norm_meth:=generation_parameters.normalization_method) is not None
+            and norm_meth != "nonorm"
+        ):
+            transforms.append(normalize.NormalizationTransform(norm_meth))
 
         return ComposeTransforms(transforms)
 
