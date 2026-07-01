@@ -47,6 +47,8 @@ class GenerationParams:
     noise_equal_for_all_channels: bool = False
     p_noise: float = 0.95
 
+    normalization_method: ty.Literal['zscore'] = 'zscore'
+
     # Low resolution simulation
     isotropic_upper_bounds: float = 4.
     anisotropic_upper_bounds: float = 8.

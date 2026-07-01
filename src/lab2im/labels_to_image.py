@@ -4,7 +4,8 @@ from . import (
     gmm,
     bias_field as bf,
     noise,
-    lowres
+    lowres,
+    normalize
 )
 
 from ._gen_params import GenerationParams
@@ -63,6 +64,10 @@ class LabelsToImage:
                 equal_for_all_channels=generation_parameters.noise_equal_for_all_channels
             ),
             p=generation_parameters.p_noise
+        ))
+
+        transforms.append(normalize.NormalizationTransform(
+            method=generation_parameters.normalization_method
         ))
 
         transforms.append(lowres.LowResolutionTransform(
