@@ -242,7 +242,10 @@ class SpatialTransform(BaseTransform):
         seg = data.get(self.segmentation_key)
         spatial_shape = seg.shape[1:]
         device = seg.device
-        dtype = seg.dtype
+        # the following code introduced a bug:
+        # dtype = seg.dtype
+        # do not generate a SVF inheriting dtype from a segmentation, dummy
+        dtype = torch.float32
 
         identity_grid = self._get_identity_grid(spatial_shape).to(device=device, dtype=dtype)
 
