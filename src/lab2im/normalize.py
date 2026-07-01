@@ -8,15 +8,20 @@ from .base import BaseTransform
 class NormalizationTransform(BaseTransform):
 
     def __init__(self,
-                 method: ty.Literal["zscore"] | None
+                 method: ty.Literal["zscore", "nonorm"] | None
                  ):
 
         self.epsilon = torch.tensor([1e-8])
         mapping = {
-            'zscore': self._zscore_norm
+            'zscore': self._zscore_norm,
+            'nonorm': self._no_norm,
+            None: self._no_norm
         }
 
-        self.fn = mapping[method]
+        self.fn = mapping[method.lower()]
+
+    def _no_norm(self, data, axis):
+        return data
 
     def _zscore_norm(self, data: torch.Tensor, axis: tuple[int]):
         mean = data.mean(dim=axis, keepdim=True)
@@ -38,4 +43,8 @@ if __name__ == "__main__":
     data = torch.randn((2, 128, 128, 128))
 
     transf = NormalizationTransform('zscore')
-    print(transf(**{'im': data})['im'].shape)
+
+    data = torch.randn((2, 128, 128, 128))
+
+    transf2 = NormalizationTransform(None)
+    assert (transf(**{'im': data})['im'].shape) == (transf2(**{'im': data})['im'].shape)
