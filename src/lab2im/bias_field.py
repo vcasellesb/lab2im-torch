@@ -64,8 +64,8 @@ class BiasFieldTransform(BaseTransform):
         return {'bias_field': bias_field_full_shape}
 
     def apply(self, data, **params):
-        bias_field = params.get('bias_field')
-        bias_field = torch.exp(bias_field)
+        bias_field: torch.Tensor = params.get('bias_field')
+        bias_field.exp_()
         data[self.image_key] *= bias_field
         return data
 
